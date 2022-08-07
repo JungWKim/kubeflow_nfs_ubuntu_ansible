@@ -1,0 +1,7 @@
+ansible_ssh_pipelining: true
+
+master_ip:
+master_user:
+
+worker_ip:
+worker_user:

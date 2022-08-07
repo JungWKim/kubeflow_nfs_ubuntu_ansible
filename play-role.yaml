@@ -1,0 +1,10 @@
+---
+- name: install k8s on ubuntu 20.04 using docker engine
+  hosts: master, worker
+  become: yes
+  gather_facts: yes
+  vars:
+    ansible_ssh_pipelining: true
+
+  roles:
+    - { role: . }

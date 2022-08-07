@@ -1,0 +1,62 @@
+- name: Disable SWAP since kubernetes can't work with swap enabled (1/2)
+  shell: |
+    swapoff -a
+  when: kubernetes_installed is changed
+  register: output
+
+- name: Disable SWAP in fstab since kubernetes can't work with swap enabled (2/2)
+  replace:
+    path: /etc/fstab
+    regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
+    replace: '# \1'
+  when: kubernetes_installed is changed
+  register: output
+
+# reference : https://germaniumhq.com/2019/02/14/2019-02-14-Disabling-Swap-for-Kubernetes-in-an-Ansible-Playbook/
+
+- name: prevent package auto upgrade
+  command: sed -i 's/1/0/g'  /etc/apt/apt.conf.d/20auto-upgrades
+  register: output
+
+- name: install basic packages
+  apt:
+    pkg:
+      - net-tools
+      - nfs-common
+      - tmux
+    state: present
+    update_cache: yes
+  register: output
+
+- name: disable ufw
+  ufw:
+    state: disabled
+  register: output
+
+- name: stop ufw
+  service:
+    name: ufw
+    state: stopped
+    enabled: false
+  register: output
+
+- name: install basic packages for docker installation
+  apt:
+    pkg:
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: present
+  register: output
+
+- name: copy docker script
+  copy:
+    src: "{{ file_path }}/{{ docker_script }}"
+    dest: "{{ client_user_home }}"
+    mode: 0777
+  register: output
+
+- name: execute docker script
+  command: "{{ client_user_home }}/{{ docker_script }}"
+  register: output
