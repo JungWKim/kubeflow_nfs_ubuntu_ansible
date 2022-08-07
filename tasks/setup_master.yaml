@@ -40,23 +40,232 @@
     enabled: false
   register: output
 
-- name: install basic packages for docker installation
+- name: execute docker script
+  command: install_docker_ubuntu.sh
+  register: output
+
+- name: create /etc/docker/daemon.json
+  file:
+    path: /etc/docker/daemon.json
+    state: touch
+  register: output
+
+- name: make docker daemon not use cgroupfs but systemd
+  blockinfile:
+    path: /etc/docker/daemon.json
+    block: |
+      {
+        "exec-opts": ["native.cgroupdriver=systemd"],
+        "log-driver": "json-file",
+        "log-opts": {
+        "max-size": "100m"
+        },
+        "storage-driver": "overlay2"
+      }
+  register: output
+
+- name: create /etc/systemd/system/docker.service.d
+  file:
+    path: /etc/systemd/system/docker.service.d
+    state: directory
+  register: output
+
+- name: restart docker daemon
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: docker
+  register: output
+
+- name: letting iptables see bridged traffic (1)
+  lineinfile:
+    path: /etc/modules-load.d/k8s.conf
+    line: br_netfilter
+  register: output
+
+- name: letting iptables see bridged traffic (2)
+  blockinfile:
+    path: /etc/sysctl.d/k8s.conf
+    block: |
+      net.bridge.bridge-nf-call-iptables = 1
+      net.bridge.bridge-nf-call-ip6tables = 1
+  register: output
+
+- name: reload system kernel params
+  command: sysctl --system
+  register: output
+
+- name: download k8s apt-key.gpg
+  get_url:
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
+    dest: /usr/share/keyrings/kubernetes-archive-keyring.gp
+    mode: 0644
+  register: output
+
+- name: create /etc/apt/sources.list.d/kubernetes.list
+  file:
+    path: /etc/apt/sources.list.d/kubernetes.list
+    state: touch
+  register: output
+
+- name: add k8s package repository
+  blockinfile:
+    path: /etc/apt/sources.list.d/kubernetes.list
+    block: |
+      deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://apt.kubernetes.io/ kubernetes-xenial main
+  register: output
+
+- name: install kubelet / kubeadm / kubectl
   apt:
     pkg:
-      - ca-certificates
-      - curl
-      - gnupg
-      - lsb-release
+      - kubelet=1.20.11-00
+      - kubeadm=1.20.11-00
+      - kubectl=1.20.11-00
+    update_cache: yes
     state: present
   register: output
 
-- name: copy docker script
-  copy:
-    src: "{{ file_path }}/{{ docker_script }}"
-    dest: "{{ client_user_home }}"
+- name: apt-mark hold kubelet / kubeadm / kubectl
+  dpkg_selections:
+    name:
+      - kubeadm
+      - kubelet
+      - kubectl
+    selection: hold
+  register: output
+
+- name: create k8s install scripts
+  become_user: "{{ master_user }}"
+  file:
+    path:
+      - $HOME/k8s_log.sh
+      - $HOME/k8s_join_master.sh
+      - $HOME/k8s_join_worker.sh
+    state: touch
     mode: 0777
   register: output
 
-- name: execute docker script
-  command: "{{ client_user_home }}/{{ docker_script }}"
+- name: kubeadm init
+  become_user: "{{ master_user }}"
+  command: "kubeadm init --control-plane-endpoint {{ master_ip }}:6443 --upload-certs --pod-network-cidr \"10.244.0.0/16\" >> $HOME/k8s_log.sh"
+  register: output
+
+- name: add join master command in its scrip
+  blockinfile:
+    path: $HOME/k8s_join_master.sh
+    block: |
+      #!/bin/bash
+      $(sed -n '/kubeadm join/,/control/p' /home/$user_name/k8s_log.sh | head -n 3)
+  register: output
+
+
+- name: install kubelet / kubeadm / kubectl
+  apt:
+    pkg:
+      - kubelet=1.20.11-00
+      - kubeadm=1.20.11-00
+      - kubectl=1.20.11-00
+    update_cache: yes
+    state: present
+  register: output
+
+- name: apt-mark hold kubelet / kubeadm / kubectl
+  dpkg_selections:
+    name:
+      - kubeadm
+      - kubelet
+      - kubectl
+    selection: hold
+  register: output
+
+- name: create k8s install scripts
+  become_user: "{{ master_user }}"
+  file:
+    path:
+      - $HOME/k8s_log.sh
+      - $HOME/k8s_join_master.sh
+      - $HOME/k8s_join_worker.sh
+    state: touch
+    mode: 0777
+  register: output
+
+- name: kubeadm init
+  become_user: "{{ master_user }}"
+  command: "kubeadm init --control-plane-endpoint {{ master_ip }}:6443 --upload-certs --pod-network-cidr \"10.244.0.0/16\" >> $HOME/k8s_log.sh"
+  register: output
+
+- name: add join master command in its scrip
+  blockinfile:
+    path: $HOME/k8s_join_master.sh
+    block: |
+      #!/bin/bash
+      $(sed -n '/kubeadm join/,/control/p' /home/$user_name/k8s_log.sh | head -n 3)
+  register: output
+
+- name: add join worker command in its scrip
+  blockinfile:
+    path: $HOME/k8s_join_worker.sh
+    block: |
+      #!/bin/bash
+      $(sed -n '/kubeadm join/,/control/p' /home/$user_name/k8s_log.sh | tail -n 2)
+  register: output
+
+- name: create .kube directory
+  become_user: "{{ master_user }}"
+  file:
+    path: $HOME/.kube
+    state: directory
+  register: output
+
+- name: copy /etc/kubernetes/admin.conf as /home/$user_name/.kube/config and change owner
+  become_user: "{{ master_user }}"
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: $HOME/.kube/config
+    owner: "{{ master_user }}"
+    group: "{{ master_user }}"
+    delegate_to: master
+  register: output
+
+- name: enable kubectl auto completion for administrator
+  become_user: "{{ master_user }}"
+  blockinfile:
+    path: $HOME/.bashrc
+    block: |
+      source <(kubectl completion bash)
+      source <(kubeadm completion bash)
+  register: output
+
+- name: enable kubectl auto completion for root
+  blockinfile:
+    path: $HOME/.bashrc
+    block: |
+      source <(kubectl completion bash)
+      source <(kubeadm completion bash)
+  register: output
+
+- name: apply administrator's .bashrc
+  become_user: "{{ master_user }}"
+  command: source $HOME/.bashrc
+  register: output
+
+- name: apply root's .bashrc
+  command: source $HOME/.bashrc
+  register: output
+
+- name: install flannel
+  command: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+  register: output
+
+- name: download helm installation script
+  become_user: "{{ master_user }}"
+  get_url:
+    url: https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
+    dest: $HOME/get_helm.sh
+    mode: 0777
+  register: output
+
+- name: install helm
+  become_user: "{{ master_user }}"
+  command: $HOME/get_helm.sh
   register: output
