@@ -1,7 +1,5 @@
 - name: Disable SWAP since kubernetes can't work with swap enabled (1/2)
-  shell: |
-    swapoff -a
-  when: kubernetes_installed is changed
+  shell: swapoff -a
   register: output
 
 - name: Disable SWAP in fstab since kubernetes can't work with swap enabled (2/2)
@@ -9,13 +7,15 @@
     path: /etc/fstab
     regexp: '^([^#].*?\sswap\s+sw\s+.*)$'
     replace: '# \1'
-  when: kubernetes_installed is changed
   register: output
 
 # reference : https://germaniumhq.com/2019/02/14/2019-02-14-Disabling-Swap-for-Kubernetes-in-an-Ansible-Playbook/
 
 - name: prevent package auto upgrade
-  command: sed -i 's/1/0/g'  /etc/apt/apt.conf.d/20auto-upgrades
+  replace:
+    path: /etc/apt/apt.conf.d/20auto-upgrades
+    regexp: 'APT::Periodic::Update-Package-Lists "1";'
+    replace: 'APT::Periodic::Update-Package-Lists "0";'
   register: output
 
 - name: install basic packages
@@ -40,34 +40,77 @@
     enabled: false
   register: output
 
-- name: execute docker script
-  command: install_docker_ubuntu.sh
+- name: copy docker installation script to master
+  become_user: "{{ master_user }}"
+  copy:
+    src: ../files/install_docker_ubuntu.sh
+    dest: $HOME
+    mode: 0777
   register: output
 
-- name: create /etc/docker/daemon.json
+- name: install packages for docker installation
+  apt:
+    pkg:
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+  register: output
+
+- name: check if /etc/apt/keyrings exists
+  stat:
+    path: /etc/apt/keyrings
+  register: stat_result
+
+- name: create /etc/apt/keyrings
   file:
-    path: /etc/docker/daemon.json
-    state: touch
+    path: /etc/apt/keyrings
+    state: directory
+  when: not stat_result.stat.exists
   register: output
 
-- name: make docker daemon not use cgroupfs but systemd
-  blockinfile:
-    path: /etc/docker/daemon.json
-    block: |
-      {
-        "exec-opts": ["native.cgroupdriver=systemd"],
-        "log-driver": "json-file",
-        "log-opts": {
-        "max-size": "100m"
-        },
-        "storage-driver": "overlay2"
-      }
+- name: download docker gpg key
+  get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /etc/apt/keyrings/docker.gpg
+    mode: 0777
   register: output
+
+- name: add docker package repository
+  blockinfile:
+    path: /etc/apt/sources.list.d/docker.list
+    block: |
+      deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu focal stable
+  register: output
+
+- name: install docker
+  apt:
+    pkg:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+    update_cache: yes
+    state: present
+  register: output
+
+- name: copy daemon.json to master
+  copy:
+    src: ../files/daemon.json
+    dest: /etc/docker/daemon.json
+    mode: 0644
+  register: output
+
+- name: check if /etc/systemd/system/docker.service.d exists
+  stat:
+    path: /etc/systemd/system/docker.service.d
+  register: stat_result
 
 - name: create /etc/systemd/system/docker.service.d
   file:
     path: /etc/systemd/system/docker.service.d
     state: directory
+  when: not stat_result.stat.exists
   register: output
 
 - name: restart docker daemon
@@ -77,10 +120,34 @@
     name: docker
   register: output
 
+- name: check if /etc/modules-load.d/k8s.conf exists
+  stat:
+    path: /etc/modules-load.d/k8s.conf
+  register: stat_result
+
+- name: create /etc/modules-load.d/k8s.conf
+  file:
+    path: /etc/modules-load.d/k8s.conf
+    state: touch
+  when: not stat_result.stat.exists
+  register: output
+
 - name: letting iptables see bridged traffic (1)
   lineinfile:
     path: /etc/modules-load.d/k8s.conf
     line: br_netfilter
+  register: output
+
+- name: check if /etc/sysctl.d/k8s.conf exists
+  stat:
+    path: /etc/sysctl.d/k8s.conf
+  register: stat_result
+
+- name: create /etc/sysctl.d/k8s.conf
+  file:
+    path: /etc/sysctl.d/k8s.conf
+    state: touch
+  when: not stat_result.stat.exists
   register: output
 
 - name: letting iptables see bridged traffic (2)
@@ -98,14 +165,20 @@
 - name: download k8s apt-key.gpg
   get_url:
     url: https://packages.cloud.google.com/apt/doc/apt-key.gpg
-    dest: /usr/share/keyrings/kubernetes-archive-keyring.gp
+    dest: /usr/share/keyrings/kubernetes-archive-keyring.gpg
     mode: 0644
   register: output
+
+- name: check if /etc/apt/sources.list.d/kubernetes.list exists
+  stat:
+    path: /etc/apt/sources.list.d/kubernetes.list
+  register: stat_result
 
 - name: create /etc/apt/sources.list.d/kubernetes.list
   file:
     path: /etc/apt/sources.list.d/kubernetes.list
     state: touch
+  when: not stat_result.stat.exists
   register: output
 
 - name: add k8s package repository
@@ -125,32 +198,66 @@
     state: present
   register: output
 
-- name: apt-mark hold kubelet / kubeadm / kubectl
+- name: apt-mark hold kubeadm
   dpkg_selections:
-    name:
-      - kubeadm
-      - kubelet
-      - kubectl
+    name: kubeadm
     selection: hold
   register: output
 
-- name: create k8s install scripts
-  become_user: "{{ master_user }}"
+- name: apt-mark hold kubelet
+  dpkg_selections:
+    name: kubelet
+    selection: hold
+  register: output
+
+- name: apt-mark hold kubectl
+  dpkg_selections:
+    name: kubectl
+    selection: hold
+  register: output
+
+- name: check if k8s script exists (1)
+  stat:
+    path: "/home/{{ master_user }}/k8s_log.sh"
+  register: stat_result
+
+- name: create k8s installation scripts (1)
   file:
-    path:
-      - $HOME/k8s_log.sh
-      - $HOME/k8s_join_master.sh
-      - $HOME/k8s_join_worker.sh
+    path: "/home/{{ master_user }}/k8s_log.sh"
+    state: touch
+    mode: 0777
+  when: not stat_result.stat.exists
+  register: output
+
+- name: check if k8s script exists (2)
+  stat:
+    path: "/home/{{ master_user }}/k8s_join_master.sh"
+  register: stat_result
+
+- name: create k8s installation scripts (2)
+  file:
+    path: "/home/{{ master_user }}/k8s_join_master.sh"
+    state: touch
+    mode: 0777
+  register: output
+
+- name: check if k8s script exists (3)
+  stat:
+    path: "/home/{{ master_user }}/k8s_join_worker.sh"
+  register: stat_result
+
+- name: create k8s installation scripts (3)
+  file:
+    path: "/home/{{ master_user }}/k8s_join_worker.sh"
     state: touch
     mode: 0777
   register: output
 
 - name: kubeadm init
-  become_user: "{{ master_user }}"
-  command: "kubeadm init --control-plane-endpoint {{ master_ip }}:6443 --upload-certs --pod-network-cidr \"10.244.0.0/16\" >> $HOME/k8s_log.sh"
+  command: "kubeadm init --control-plane-endpoint {{ master_ip }}:6443 --upload-certs --pod-network-cidr \"10.244.0.0/16\" > /home/{{ master_user }}/k8s_log.sh"
   register: output
 
-- name: add join master command in its scrip
+- name: add join master command in its script
   blockinfile:
     path: $HOME/k8s_join_master.sh
     block: |
@@ -194,7 +301,7 @@
   command: "kubeadm init --control-plane-endpoint {{ master_ip }}:6443 --upload-certs --pod-network-cidr \"10.244.0.0/16\" >> $HOME/k8s_log.sh"
   register: output
 
-- name: add join master command in its scrip
+- name: add join master command in its script
   blockinfile:
     path: $HOME/k8s_join_master.sh
     block: |
@@ -202,7 +309,7 @@
       $(sed -n '/kubeadm join/,/control/p' /home/$user_name/k8s_log.sh | head -n 3)
   register: output
 
-- name: add join worker command in its scrip
+- name: add join worker command in its script
   blockinfile:
     path: $HOME/k8s_join_worker.sh
     block: |
@@ -210,11 +317,17 @@
       $(sed -n '/kubeadm join/,/control/p' /home/$user_name/k8s_log.sh | tail -n 2)
   register: output
 
+- name: check if /home/{master_user}/.kube exists
+  stat:
+    path: "/home/{{ master_user }}/.kube"
+  register: stat_result
+
 - name: create .kube directory
   become_user: "{{ master_user }}"
   file:
     path: $HOME/.kube
     state: directory
+  when: not stat_result.stat.exists
   register: output
 
 - name: copy /etc/kubernetes/admin.conf as /home/$user_name/.kube/config and change owner
@@ -267,5 +380,5 @@
 
 - name: install helm
   become_user: "{{ master_user }}"
-  command: $HOME/get_helm.sh
+  script: $HOME/get_helm.sh
   register: output

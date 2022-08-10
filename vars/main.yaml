@@ -1,7 +1,5 @@
-ansible_ssh_pipelining: true
+master_ip: 192.168.1.47
+master_user: gpuadmin
 
-master_ip:
-master_user:
-
-worker_ip:
-worker_user:
+worker_ip: 192.168.1.48
+worker_user: gpuadmin

@@ -1,6 +1,5 @@
 ---
 - name: check the servers' os version
-  hosts: master, worker
   when: >
     (ansible_distribution != 'Ubuntu')
 
@@ -10,22 +9,25 @@
   meta: end_play
 
 - name: setup master node
-  hosts: master
   include_tasks: setup_master.yaml
   when:
     - master_ip is defined
     - master_user is defined
-    - worker_ip is defined
-    - worker_user is defined
+...
 
-- name: setup worker node
-  hosts: worker
-  include_tasks: setup_worker.yaml
+#- name: setup worker node
+#  hosts: worker
+#  include_tasks: setup_worker.yaml
+#  when:
+#    - worker_ip is defined
+#    - worker_user is defined
  
-- name: join worker nodes to cluster
-  hosts: worker
-  include_tasks: join_worker.yaml
+#- name: join worker nodes to cluster
+#  hosts: worker
+#  include_tasks: join_worker.yaml
+#  wait_for:
+#    variable
 
-- name: install gpu operator
-  hosts: master
-  include_tasks: install_gpu_operator.yaml
+#- name: install gpu operator
+#  hosts: master
+#  include_tasks: install_gpu_operator.yaml
