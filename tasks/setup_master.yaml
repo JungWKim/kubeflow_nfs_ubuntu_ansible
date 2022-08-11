@@ -25,7 +25,6 @@
       - nfs-common
       - tmux
     state: present
-    update_cache: yes
   register: output
 
 - name: disable ufw
@@ -48,50 +47,8 @@
     mode: 0777
   register: output
 
-- name: install packages for docker installation
-  apt:
-    pkg:
-      - ca-certificates
-      - curl
-      - gnupg
-      - lsb-release
-  register: output
-
-- name: check if /etc/apt/keyrings exists
-  stat:
-    path: /etc/apt/keyrings
-  register: stat_result
-
-- name: create /etc/apt/keyrings
-  file:
-    path: /etc/apt/keyrings
-    state: directory
-  when: not stat_result.stat.exists
-  register: output
-
-- name: download docker gpg key
-  get_url:
-    url: https://download.docker.com/linux/ubuntu/gpg
-    dest: /etc/apt/keyrings/docker.gpg
-    mode: 0777
-  register: output
-
-- name: add docker package repository
-  blockinfile:
-    path: /etc/apt/sources.list.d/docker.list
-    block: |
-      deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu focal stable
-  register: output
-
-- name: install docker
-  apt:
-    pkg:
-      - docker-ce
-      - docker-ce-cli
-      - containerd.io
-      - docker-compose-plugin
-    update_cache: yes
-    state: present
+- name: execute docker installation script
+  command: "/home/{{ master_user }}/install_docker_ubuntu.sh"
   register: output
 
 - name: copy daemon.json to master
@@ -254,54 +211,21 @@
   register: output
 
 - name: kubeadm init
-  command: "kubeadm init --control-plane-endpoint {{ master_ip }}:6443 --upload-certs --pod-network-cidr \"10.244.0.0/16\" > /home/{{ master_user }}/k8s_log.sh"
+  shell: "kubeadm init --control-plane-endpoint {{ master_ip }}:6443 --upload-certs --pod-network-cidr \"10.244.0.0/16\" >> /home/{{ master_user }}/k8s_log.sh"
   register: output
+
+- name: add join master command in its script (1)
+  command: "echo \"#!/bin/bash\" >> /home/{{ master_user }}/k8s_join_master.sh"
+  register: output
+
+- name: add join master command in its script (2)
+  command: "sed -n \'/kubeadm join/,/control/p\' /home/$user_name/k8s_log.sh | head -n 3) >> /home/{{ master_user }}/k8s_join_master.sh"
+  register: output
+
+- name: add 
 
 - name: add join master command in its script
-  blockinfile:
-    path: $HOME/k8s_join_master.sh
-    block: |
-      #!/bin/bash
-      $(sed -n '/kubeadm join/,/control/p' /home/$user_name/k8s_log.sh | head -n 3)
-  register: output
-
-
-- name: install kubelet / kubeadm / kubectl
-  apt:
-    pkg:
-      - kubelet=1.20.11-00
-      - kubeadm=1.20.11-00
-      - kubectl=1.20.11-00
-    update_cache: yes
-    state: present
-  register: output
-
-- name: apt-mark hold kubelet / kubeadm / kubectl
-  dpkg_selections:
-    name:
-      - kubeadm
-      - kubelet
-      - kubectl
-    selection: hold
-  register: output
-
-- name: create k8s install scripts
   become_user: "{{ master_user }}"
-  file:
-    path:
-      - $HOME/k8s_log.sh
-      - $HOME/k8s_join_master.sh
-      - $HOME/k8s_join_worker.sh
-    state: touch
-    mode: 0777
-  register: output
-
-- name: kubeadm init
-  become_user: "{{ master_user }}"
-  command: "kubeadm init --control-plane-endpoint {{ master_ip }}:6443 --upload-certs --pod-network-cidr \"10.244.0.0/16\" >> $HOME/k8s_log.sh"
-  register: output
-
-- name: add join master command in its script
   blockinfile:
     path: $HOME/k8s_join_master.sh
     block: |
@@ -310,6 +234,7 @@
   register: output
 
 - name: add join worker command in its script
+  become_user: "{{ master_user }}"
   blockinfile:
     path: $HOME/k8s_join_worker.sh
     block: |
