@@ -210,9 +210,9 @@
     mode: 0777
   register: output
 
-#- name: kubeadm init
-#  shell: "kubeadm init --control-plane-endpoint {{ master_ip }}:6443 --upload-certs --pod-network-cidr \"10.244.0.0/16\" >> /home/{{ master_user }}/k8s_log.sh"
-#  register: output
+- name: kubeadm init
+  shell: "kubeadm init --control-plane-endpoint {{ master_ip }}:6443 --upload-certs --pod-network-cidr \"10.244.0.0/16\" >> /home/{{ master_user }}/k8s_log.sh"
+  register: output
 
 - name: add join master command in its script (1)
   shell: "echo \"#!/bin/bash\" > /home/{{ master_user }}/k8s_join_master.sh"
@@ -291,13 +291,13 @@
       source <(kubeadm completion bash)
   register: output
 
-#- name: install flannel
-#  become: yes
-#  become_user: root
-#  shell: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-#  args:
-#    chdir: "/home/{{ master_user }}"
-#  register: output
+- name: install flannel
+  become: yes
+  become_user: root
+  shell: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+  args:
+    chdir: "/home/{{ master_user }}"
+  register: output
 
 - name: download helm installation script
   become_user: "{{ master_user }}"
