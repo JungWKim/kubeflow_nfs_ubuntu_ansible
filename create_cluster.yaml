@@ -72,7 +72,7 @@
 
     - name: add join master command in its script (1)
       become_user: "{{ admin }}"
-      shell: echo \"#!/bin/bash\" > $HOME/k8s_join_master.sh
+      shell: echo "#!/bin/bash" > $HOME/k8s_join_master.sh
       register: output
 
     - name: add join master command in its script (2)
@@ -81,7 +81,7 @@
 
     - name: add join worker command in its script (1)
       become_user: "{{ admin }}"
-      shell: echo \"#!/bin/bash\" > $HOME/k8s_join_worker.sh
+      shell: echo "#!/bin/bash" > $HOME/k8s_join_worker.sh
       register: output
 
     - name: add join worker command in its script (2)
