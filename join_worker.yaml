@@ -1,0 +1,32 @@
+---
+- name: install k8s on ubuntu 20.04 using docker engine
+  hosts: worker
+  become: yes
+  gather_facts: yes
+  vars:
+    admin: gpuadmin
+
+  tasks:
+    - name: check the servers' os version
+      when: >
+        (ansible_distribution != 'Ubuntu')
+
+        or
+
+        (ansible_distribution_version != '20.04')
+      meta: end_play
+
+    - name: check variable is defined
+      when:
+        - admin is not defined
+      meta: end_play
+
+    - name: copy join worker script to worker
+      copy:
+        src: "/home/{{ admin }}/k8s_join_worker.sh"
+        dest: "/home/{{ admin }}"
+      register: output
+
+    - name: execute join worker command
+      shell: "/home/{{ admin }}/k8s_join_worker.sh"
+      register: output

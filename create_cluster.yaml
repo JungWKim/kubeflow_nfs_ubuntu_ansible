@@ -4,7 +4,7 @@
   become: yes
   gather_facts: yes
   vars:
-    master_user: gpuadmin
+    admin: gpuadmin
     master_ip: 192.168.1.47
 
   tasks:
@@ -19,17 +19,18 @@
 
     - name: setup master node
       when:
-        - master_user is not defined
+        - admin is not defined
+        - master_ip is not defined
       meta: end_play    
 
     - name: check if k8s log file exists
       stat:
-        path: "/home/{{ master_user }}/k8s_log.sh"
+        path: "/home/{{ admin }}/k8s_log.sh"
       register: stat_result
 
     - name: create k8s log file
       file:
-        path: "/home/{{ master_user }}/k8s_log.sh"
+        path: "/home/{{ admin }}/k8s_log.sh"
         state: touch
         mode: 0777
       when: not stat_result.stat.exists
@@ -37,46 +38,46 @@
 
     - name: check if k8s join master script exists
       stat:
-        path: "/home/{{ master_user }}/k8s_join_master.sh"
+        path: "/home/{{ admin }}/k8s_join_master.sh"
       register: stat_result
 
     - name: create k8s join master script
       file:
-        path: "/home/{{ master_user }}/k8s_join_master.sh"
+        path: "/home/{{ admin }}/k8s_join_master.sh"
         state: touch
         mode: 0777
       register: output
 
     - name: check if k8s join worker script exists
       stat:
-        path: "/home/{{ master_user }}/k8s_join_worker.sh"
+        path: "/home/{{ admin }}/k8s_join_worker.sh"
       register: stat_result
 
     - name: create k8s join worker script
       file:
-        path: "/home/{{ master_user }}/k8s_join_worker.sh"
+        path: "/home/{{ admin }}/k8s_join_worker.sh"
         state: touch
         mode: 0777
       register: output
 
     - name: kubeadm init
-      shell: "kubeadm init --control-plane-endpoint {{ master_ip }}:6443 --upload-certs --pod-network-cidr \"10.244.0.0/16\" >> /home/{{ master_user }}/k8s_log.sh"
+      shell: "kubeadm init --control-plane-endpoint {{ master_ip }}:6443 --upload-certs --pod-network-cidr \"10.244.0.0/16\" >> /home/{{ admin }}/k8s_log.sh"
       register: output
 
     - name: add join master command in its script (1)
-      shell: "echo \"#!/bin/bash\" > /home/{{ master_user }}/k8s_join_master.sh"
+      shell: "echo \"#!/bin/bash\" > /home/{{ admin }}/k8s_join_master.sh"
       register: output
 
     - name: add join master command in its script (2)
-      shell: "sed -n \'/kubeadm join/,/control/p\' /home/{{ master_user }}/k8s_log.sh | head -n 3 >> /home/{{ master_user }}/k8s_join_master.sh"
+      shell: "sed -n \'/kubeadm join/,/control/p\' /home/{{ admin }}/k8s_log.sh | head -n 3 >> /home/{{ admin }}/k8s_join_master.sh"
       register: output
 
     - name: add join worker command in its script (1)
-      shell: "echo \"#!/bin/bash\" > /home/{{ master_user }}/k8s_join_worker.sh"
+      shell: "echo \"#!/bin/bash\" > /home/{{ admin }}/k8s_join_worker.sh"
       register: output
 
     - name: add join worker command in its script (2)
-      shell: "sed -n \'/kubeadm join/,/control/p\' /home/{{ master_user }}/k8s_log.sh | tail -n 2 >> /home/{{ master_user }}/k8s_join_worker.sh"
+      shell: "sed -n \'/kubeadm join/,/control/p\' /home/{{ admin }}/k8s_log.sh | tail -n 2 >> /home/{{ admin }}/k8s_join_worker.sh"
       register: output
 
     - name: check if master root's $HOME/.kube exists
@@ -92,13 +93,13 @@
       register: output
 
     - name: check if master admin's $HOME/.kube exists
-      become_user: "{{ master_user }}"
+      become_user: "{{ admin }}"
       stat:
         path: $HOME/.kube
       register: stat_result
 
     - name: create master admin's $HOME/.kube directory
-      become_user: "{{ master_user }}"
+      become_user: "{{ admin }}"
       file:
         path: $HOME/.kube
         state: directory
@@ -117,9 +118,9 @@
     - name: copy /etc/kubernetes/admin.conf as master admin's $HOME/.kube/config and change owner
       copy:
         src: /etc/kubernetes/admin.conf
-        dest: "/home/{{ master_user }}/.kube/config"
-        owner: "{{ master_user }}"
-        group: "{{ master_user }}"
+        dest: "/home/{{ admin }}/.kube/config"
+        owner: "{{ admin }}"
+        group: "{{ admin }}"
         remote_src: yes
       register: output
 
@@ -128,11 +129,11 @@
       become_user: root
       shell: kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
       args:
-        chdir: "/home/{{ master_user }}"
+        chdir: "/home/{{ admin }}"
       register: output
 
     - name: download helm installation script
-      become_user: "{{ master_user }}"
+      become_user: "{{ admin }}"
       get_url:
         url: https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3
         dest: $HOME/get_helm.sh
@@ -140,5 +141,5 @@
       register: output
 
     - name: install helm
-      shell: "/home/{{ master_user }}/get_helm.sh"
+      shell: "/home/{{ admin }}/get_helm.sh"
       register: output

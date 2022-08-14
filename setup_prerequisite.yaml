@@ -4,8 +4,7 @@
   become: yes
   gather_facts: yes
   vars:
-    master_user: gpuadmin
-    worker_user: gpuadmin
+    admin: gpuadmin
 
   tasks:
     - name: check the servers' os version
@@ -19,8 +18,7 @@
 
     - name: setup master node
       when:
-        - master_user is not defined
-        - worker_user is not defined
+        - admin is not defined
       meta: end_play
 
     - name: Disable SWAP since kubernetes can't work with swap enabled (1/2)
@@ -72,20 +70,20 @@
       register: output
 
     - name: copy docker installation script to master
-      become_user: "{{ master_user }}"
+      become_user: "{{ admin }}"
       copy:
-        src: ../files/install_docker_ubuntu.sh
+        src: files/install_docker_ubuntu.sh
         dest: $HOME
         mode: 0777
       register: output
 
     - name: execute docker installation script
-      command: "/home/{{ master_user }}/install_docker_ubuntu.sh"
+      command: "/home/{{ admin }}/install_docker_ubuntu.sh"
       register: output
 
     - name: copy daemon.json to master
       copy:
-        src: ../files/daemon.json
+        src: files/daemon.json
         dest: /etc/docker/daemon.json
         mode: 0644
       register: output
@@ -214,7 +212,7 @@
       register: output
 
     - name: enable kubectl auto completion for admin
-      become_user: "{{ master_user }}"
+      become_user: "{{ admin }}"
       blockinfile:
         path: $HOME/.bashrc
         block: |
