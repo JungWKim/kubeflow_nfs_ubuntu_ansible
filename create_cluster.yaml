@@ -76,7 +76,7 @@
       register: output
 
     - name: add join master command in its script (2)
-      shell: sed -n \'/kubeadm join/,/control/p\' /home/{{ admin }}/k8s_log.sh | head -n 3 >> /home/{{ admin }}/k8s_join_master.sh
+      shell: sed -n '/kubeadm join/,/control/p' /home/{{ admin }}/k8s_log.sh | head -n 3 >> /home/{{ admin }}/k8s_join_master.sh
       register: output
 
     - name: add join worker command in its script (1)
@@ -86,7 +86,7 @@
 
     - name: add join worker command in its script (2)
       become_user: "{{ admin }}"
-      shell: sed -n \'/kubeadm join/,/control/p\' $HOME/k8s_log.sh | tail -n 2 >> $HOME/k8s_join_worker.sh
+      shell: sed -n '/kubeadm join/,/control/p' $HOME/k8s_log.sh | tail -n 2 >> $HOME/k8s_join_worker.sh
       register: output
 
     - name: check if master root's $HOME/.kube exists

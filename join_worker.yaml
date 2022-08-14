@@ -26,9 +26,9 @@
       copy:
         src: "/home/{{ admin }}/k8s_join_worker.sh"
         dest: $HOME
+        mode: 0777
       register: output
 
     - name: execute join worker command
-      become_user: "{{ admin }}"
-      shell: $HOME/k8s_join_worker.sh
+      shell: "/home/{{ admin }}/k8s_join_worker.sh"
       register: output
