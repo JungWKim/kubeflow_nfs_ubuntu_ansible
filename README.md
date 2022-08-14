@@ -10,3 +10,4 @@
 ## 4. input 'nodes', 'master', 'workers' into /etc/ansible/hosts
 ## 5. use all the same account through worker nodes
 ## 6. input right 'admin', 'master_ip' in every yaml file
+## 7. change values in /etc/ansible/ansible.cfg as you prefer
