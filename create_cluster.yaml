@@ -1,5 +1,5 @@
 ---
-- name: install k8s on ubuntu 20.04 using docker engine
+- name: create a cluster on master node
   hosts: master
   become: yes
   gather_facts: yes

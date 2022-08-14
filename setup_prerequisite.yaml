@@ -1,5 +1,5 @@
 ---
-- name: install k8s on ubuntu 20.04 using docker engine
+- name: setup prerequisite jobs on every node
   hosts: nodes
   become: yes
   gather_facts: yes

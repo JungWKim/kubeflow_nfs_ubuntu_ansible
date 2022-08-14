@@ -1,5 +1,5 @@
 ---
-- name: install k8s on ubuntu 20.04 using docker engine
+- name: join worker nodes into the cluster
   hosts: worker
   become: yes
   gather_facts: yes
