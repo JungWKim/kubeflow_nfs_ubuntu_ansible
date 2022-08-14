@@ -61,7 +61,7 @@
       register: output
 
     - name: kubeadm init
-      shell: "kubeadm init --control-plane-endpoint {{ master_ip }}:6443 --upload-certs --pod-network-cidr \"10.244.0.0/16\" >> /home/{{ admin }}/k8s_log.sh"
+      shell: "kubeadm init --control-plane-endpoint {{ hostvars['master']['ansible_default_ipv4']['address'] }}:6443 --upload-certs --pod-network-cidr \"10.244.0.0/16\" >> /home/{{ admin }}/k8s_log.sh"
       register: output
 
     - name: add join master command in its script (1)
