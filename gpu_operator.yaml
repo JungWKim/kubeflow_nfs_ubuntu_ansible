@@ -1,0 +1,39 @@
+---
+- name: install gpu operator on workers
+  hosts: master
+  become: yes
+  gather_facts: yes
+  vars:
+    admin: gpuadmin
+
+  tasks:
+    - name: check the servers' os version
+      when: >
+        (ansible_distribution != 'Ubuntu')
+
+        or
+
+        (ansible_distribution_version != '20.04')
+      meta: end_play
+
+    - name: setup master node
+      when:
+        - admin is not defined
+      meta: end_play    
+
+    - name: add nvidia helm repository
+      kubernetes.core.helm_repository:
+        name: nvidia
+        repo_url: https://helm.ngc.nvidia.com/nvidia
+      register: output
+
+    - name: update helm repo
+      shell: helm repo update
+      register: output
+
+    - name: install gpu operator
+      shell: |
+        helm install --wait --generate-name \
+        -n gpu-operator --create-namespace \
+        nvidia/gpu-operator
+      register: output
