@@ -22,11 +22,13 @@
       meta: end_play
 
     - name: copy join worker script to worker
+      become_user: "{{ admin }}"
       copy:
         src: "/home/{{ admin }}/k8s_join_worker.sh"
-        dest: "/home/{{ admin }}"
+        dest: $HOME
       register: output
 
     - name: execute join worker command
-      shell: "/home/{{ admin }}/k8s_join_worker.sh"
+      become_user: "{{ admin }}"
+      shell: $HOME/k8s_join_worker.sh
       register: output
