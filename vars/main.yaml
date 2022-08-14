@@ -1,5 +1,0 @@
-master_ip: 192.168.1.47
-master_user: gpuadmin
-
-worker_ip: 192.168.1.48
-worker_user: gpuadmin
