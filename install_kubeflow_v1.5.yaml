@@ -79,7 +79,7 @@
         mode:  0777
       register: output
 
-      #- name: create certificate
-      #  become_user: "{{ admin }}"
-      #  shell: kubectl apply -f $HOME/k8s_ubuntu_ansible/files/certificate.yaml
-      #  register: output
+    - name: create certificate
+      become_user: "{{ admin }}"
+      shell: kubectl apply -f $HOME/k8s_ubuntu_ansible/files/certificate.yaml
+      register: output
