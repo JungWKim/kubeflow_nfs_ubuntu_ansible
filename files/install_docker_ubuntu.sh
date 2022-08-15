@@ -8,7 +8,7 @@ echo \
 "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
 $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 apt update
-apt install -y docker-ce=19.03 docker-ce-cli=19.03 containerd.io docker-compose-plugin
+apt install -y docker-ce=5:19.03.15~3-0~ubuntu-focal docker-ce-cli=5:19.03.15~3-0~ubuntu-focal containerd.io docker-compose-plugin
 
 echo -e "\n\n\n------------------------------------------ docker images -----------------------------------------------"
 docker images
