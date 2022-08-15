@@ -1,11 +1,11 @@
 #!/bin/bash
 
-ansible-playbook prerequisite.yaml -kK
+ansible-playbook prerequisite.yaml -kK -e "admin=gpuadmin"
 
-ansible-playbook setup_master.yaml -kK
+ansible-playbook setup_master.yaml -kK -e "admin=gpuadmin master_ip=192.168.1.47"
 
-ansible-playbook join_worker.yaml -kK
+ansible-playbook join_worker.yaml -kK -e "admin=gpuadmin"
 
-ansible-galaxy collection install kubernetes.core      
+ansible-galaxy collection install kubernetes.core
 
-ansible-playbook gpu_operator.yaml -kK
+ansible-playbook gpu_operator.yaml -kK -e "admin=gpuadmin"

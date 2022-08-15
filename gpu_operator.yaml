@@ -3,8 +3,6 @@
   hosts: master
   become: yes
   gather_facts: yes
-  vars:
-    admin: gpuadmin
 
   tasks:
     - name: check the servers' os version
