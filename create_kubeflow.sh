@@ -7,6 +7,8 @@ echo -e "                              *                                        
 echo -e "                              *************************************************                              \n\n"
 ansible-playbook install_nfs_provisioner.yaml -kK -e "admin=gpuadmin nfs_ip=192.168.1.123 nfs_path=/rancher"
 
+sleep 60
+
 echo -e "                              *************************************************                              "
 echo -e "                              *                                               *                              "
 echo -e "                              *            install kubeflow v1.5.yaml         *                              "
