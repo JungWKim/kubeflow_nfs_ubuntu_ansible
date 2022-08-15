@@ -7,7 +7,7 @@ spec:
   commonName: istio-ingressgateway.istio-system.svc
   # Use ipAddresses if your LoadBalancer issues an IP
   ipAddresses:
-  - 192.168.1.47
+  - MASTER_IP
   # Use dnsNames if your LoadBalancer issues a hostname (eg DNS name from Civo dashboard)
   #dnsNames:
   #- <LoadBalancer HostName>
