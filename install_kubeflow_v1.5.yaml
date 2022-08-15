@@ -21,7 +21,86 @@
       meta: end_play
 
     - name: download kubeflow git repository
+      become_user: "{{ admin }}"
       git:
         repo: 'https://github.com/kubeflow/manifests.git'
-        dest: 
+        dest: $HOME/manifests
         version: v1.5-branch
+      register: output
+
+    - name: change MASTER_IP to master_ip in certificate.yaml
+      become_user: "{{ admin }}"
+      replace:
+        regexp: 'MASTER_IP'
+        replace: "{{ master_ip }}"
+        path: $HOME/k8s_ubuntu_ansible/files/certificate.yaml
+      register: output
+
+    - name: create certificate
+      become_user: "{{ admin }}"
+      shell: kubectl apply -f $HOME/k8s_ubuntu_ansible/files/certificate.yaml
+      register: output
+
+    - name: add https redirection code in kf-istio-resources.yaml
+      become_user: "{{ admin }}"
+      blockinfile:
+        block: |
+              tls:
+                httpsRedirect: true
+              port:
+                name: https
+                number: 443
+                protocol: HTTPS
+              tls:
+                mode: SIMPLE
+                privateKey: /etc/istio/ingressgateway-certs/tls.key
+                serverCertificate: /etc/istio/ingressgateway-certs/tls.crt
+        path: $HOME/manifests/common/istio-1-11/kubeflow-istio-resources/base/kf-istio-resources.yaml
+      register: output
+
+    - name: add line in kf-istio-resources.yaml (1)
+      become_user: "{{ admin }}"
+      lineinfile:
+        line: "    - hosts:"
+        insertafter: "httpsRedirect"
+        path: $HOME/manifests/common/istio-1-11/kubeflow-istio-resources/base/kf-istio-resources.yaml
+      register: output
+
+    - name: add line in kf-istio-resources.yaml (2)
+      become_user: "{{ admin }}"
+      lineinfile:
+        line: "      -'*'"
+        insertafter: "- hosts:"
+        path: $HOME/manifests/common/istio-1-11/kubeflow-istio-resources/base/kf-istio-resources.yaml
+      register: output
+
+    - name: add line in deployment.yaml (1)
+      become_user: "{{ admin }}"
+      lineinfile:
+        line: '        - name: APP_SECURE_COOKIES'
+        insertafter: "env:"
+        path: $HOME/manifests/apps/jupyter/jupyter-web-app/upstream/base/deployment.yaml
+      register: output
+
+    - name: add line in deployment.yaml (2)
+      become_user: "{{ admin }}"
+      lineinfile:
+        line: '          value: "false"'
+        insertafter: "APP_SECURE_COOKIES"
+        path: $HOME/manifests/apps/jupyter/jupyter-web-app/upstream/base/deployment.yaml
+      register: output
+
+    - name: download kustomize
+      get_url:
+        url: https://github.com/kubernetes-sigs/kustomize/releases/download/v3.2.0/kustomize_3.2.0_linux_amd64
+        dest: /usr/bin/kustomize
+        mode:  0777
+      register: output
+
+    - name: install kubeflow
+      become_user: "{{ admin }}"
+      shell: |
+        while ! kustomize build example | kubectl apply -f -; do echo "Retrying to apply resources"; sleep 10; done
+      args:
+        chdir: $HOME/manifests
+      register: output
