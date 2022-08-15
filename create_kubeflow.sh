@@ -13,3 +13,7 @@ echo -e "                              *            install kubeflow v1.5.yaml  
 echo -e "                              *                                               *                              "
 echo -e "                              *************************************************                              \n\n"
 ansible-playbook install_kubeflow_v1.5.yaml -kK -e "admin=gpuadmin master_ip=192.168.1.47"
+
+cd ~/manifests
+while ! kustomize build example | kubectl apply -f -; do echo "Retrying to apply resources"; sleep 10; done
+cd -

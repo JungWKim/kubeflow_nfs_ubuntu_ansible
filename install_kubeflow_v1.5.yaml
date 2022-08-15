@@ -26,6 +26,7 @@
         repo: 'https://github.com/kubeflow/manifests.git'
         dest: $HOME/manifests
         version: v1.5-branch
+        force: yes
       register: output
 
     - name: change MASTER_IP to master_ip in certificate.yaml
@@ -36,42 +37,23 @@
         path: $HOME/k8s_ubuntu_ansible/files/certificate.yaml
       register: output
 
-    - name: create certificate
+    - name: insert
       become_user: "{{ admin }}"
-      shell: kubectl apply -f $HOME/k8s_ubuntu_ansible/files/certificate.yaml
-      register: output
-
-    - name: add https redirection code in kf-istio-resources.yaml
-      become_user: "{{ admin }}"
-      blockinfile:
-        block: |
-              tls:
-                httpsRedirect: true
-              port:
-                name: https
-                number: 443
-                protocol: HTTPS
-              tls:
-                mode: SIMPLE
-                privateKey: /etc/istio/ingressgateway-certs/tls.key
-                serverCertificate: /etc/istio/ingressgateway-certs/tls.crt
-        path: $HOME/manifests/common/istio-1-11/kubeflow-istio-resources/base/kf-istio-resources.yaml
-      register: output
-
-    - name: add line in kf-istio-resources.yaml (1)
-      become_user: "{{ admin }}"
-      lineinfile:
-        line: "    - hosts:"
-        insertafter: "httpsRedirect"
-        path: $HOME/manifests/common/istio-1-11/kubeflow-istio-resources/base/kf-istio-resources.yaml
-      register: output
-
-    - name: add line in kf-istio-resources.yaml (2)
-      become_user: "{{ admin }}"
-      lineinfile:
-        line: "      -'*'"
-        insertafter: "- hosts:"
-        path: $HOME/manifests/common/istio-1-11/kubeflow-istio-resources/base/kf-istio-resources.yaml
+      shell: |
+        cat << EOF >> $HOME/manifests/common/istio-1-11/kubeflow-istio-resources/base/kf-istio-resources.yaml
+            tls:
+              httpsRedirect: true
+          - hosts:
+            - '*'
+            port:
+              name: https
+              number: 443
+              protocol: HTTPS
+            tls:
+              mode: SIMPLE
+              privateKey: /etc/istio/ingressgateway-certs/tls.key
+              serverCertificate: /etc/istio/ingressgateway-certs/tls.crt
+        EOF
       register: output
 
     - name: add line in deployment.yaml (1)
@@ -97,10 +79,7 @@
         mode:  0777
       register: output
 
-    - name: install kubeflow
-      become_user: "{{ admin }}"
-      shell: |
-        while ! kustomize build example | kubectl apply -f -; do echo "Retrying to apply resources"; sleep 10; done
-      args:
-        chdir: $HOME/manifests
-      register: output
+      #- name: create certificate
+      #  become_user: "{{ admin }}"
+      #  shell: kubectl apply -f $HOME/k8s_ubuntu_ansible/files/certificate.yaml
+      #  register: output
