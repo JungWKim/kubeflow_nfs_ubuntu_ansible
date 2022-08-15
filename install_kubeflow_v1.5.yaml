@@ -1,0 +1,27 @@
+---
+- name: install kubeflow v1.5
+  hosts: master
+  become: yes
+  gather_facts: yes
+
+  tasks:
+    - name: check the servers' os version
+      when: >
+        (ansible_distribution != 'Ubuntu')
+
+        or
+
+        (ansible_distribution_version != '20.04')
+      meta: end_play
+
+    - name: setup master node
+      when:
+        - admin is not defined
+        - master_ip not defined
+      meta: end_play
+
+    - name: download kubeflow git repository
+      git:
+        repo: 'https://github.com/kubeflow/manifests.git'
+        dest: 
+        version: v1.5-branch

@@ -1,5 +1,5 @@
 ---
-- name: install gpu operator on workers
+- name: install gpu operator
   hosts: master
   become: yes
   gather_facts: yes
