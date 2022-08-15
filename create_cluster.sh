@@ -19,7 +19,7 @@ echo -e "                              *                                        
 echo -e "                              *            execute join_worker.yaml           *                              "
 echo -e "                              *                                               *                              "
 echo -e "                              *************************************************                              \n\n"
-ansible-playbook join_worker.yaml -kK -e "admin=gpuadmin"
+ansible-playbook setup_worker.yaml -kK -e "admin=gpuadmin"
 
 echo -e "                              *************************************************                              "
 echo -e "                              *                                               *                              "
@@ -33,4 +33,4 @@ echo -e "                              *                                        
 echo -e "                              *           execute gpu_operator.yaml           *                              "
 echo -e "                              *                                               *                              "
 echo -e "                              *************************************************                              \n\n"
-ansible-playbook gpu_operator.yaml -kK -e "admin=gpuadmin"
+ansible-playbook install_gpu_operator.yaml -kK -e "admin=gpuadmin"
