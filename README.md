@@ -9,5 +9,5 @@
 ## 3. change hostnames on each node
 ## 4. use same account and password through worker nodes
 ## 5. input 'nodes', 'master', 'workers' into /etc/ansible/hosts
-## 6. input right values in 'admin'and 'master_ip' in create_cluster.sh
+## 6. input right values in 'admin' and 'master_ip' in create_cluster.sh
 ## 7. change values in /etc/ansible/ansible.cfg as you prefer
