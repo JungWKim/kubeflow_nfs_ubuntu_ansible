@@ -1,11 +1,11 @@
 # Summary
-# k8s version : 1.20.11
-# CRI : Docker v19.03
-# CNI : flannel
-# OS : Ubuntu 20.04.1
-# provisioner : nfs
-# kubeflow version : 1.5
-# kustomize : 3.2.0
+### k8s version : 1.20.11
+### CRI : Docker v19.03
+### CNI : flannel
+### OS : Ubuntu 20.04.1
+### provisioner : nfs
+### kubeflow version : 1.5
+### kustomize : 3.2.0
 #
 # Simple Explanation about this repository
 ### 1. create_cluster.sh creates 1 master and multiple worker nodes
