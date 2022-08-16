@@ -24,3 +24,5 @@ ansible-playbook install_kubeflow_v1.5.yaml -kK -e "admin=${admin} master_ip=${m
 cd ~/manifests
 while ! kustomize build example | kubectl apply -f -; do echo "Retrying to apply resources"; sleep 10; done
 cd -
+
+kubectl apply -f files/certificate.yaml
