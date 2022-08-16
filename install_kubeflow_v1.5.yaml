@@ -78,8 +78,3 @@
         dest: /usr/bin/kustomize
         mode:  0777
       register: output
-
-    - name: create certificate
-      become_user: "{{ admin }}"
-      shell: kubectl apply -f $HOME/kubeflow_ubuntu_ansible/files/certificate.yaml
-      register: output
