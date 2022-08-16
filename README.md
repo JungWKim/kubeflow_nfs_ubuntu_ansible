@@ -1,3 +1,12 @@
+# Summary
+# k8s version : 1.20.11
+# CRI : Docker v19.03
+# CNI : flannel
+# OS : Ubuntu 20.04.1
+# provisioner : nfs
+# kubeflow version : 1.5
+# kustomize : 3.2.0
+#
 # Simple Explanation about this repository
 ### 1. create_cluster.sh creates 1 master and multiple worker nodes
 ### 2. create_cluster.sh can be executed only on master node
@@ -10,7 +19,7 @@
 ### 1. fix ips of every node
 ### 2. install sshpass on every node
 ### 3. change hostnames on each node(optional)
-### 4. use same account and password through worker nodes(this is not an option, you must do this!)
+### 4. use same account and password through all nodes(this is not an option, you must do this!)
 ### 5. make groups 'nodes', 'master', 'workers' and write ips in /etc/ansible/hosts
-### 6. input right values of variables which are 'admin', 'master_ip', 'nfs_ip', 'nfs_path' in create_cluster.sh & create_kubeflow.sh
+### 6. input right values into 'admin', 'master_ip', 'nfs_ip', 'nfs_path' in create_cluster.sh & create_kubeflow.sh
 ### 7. change values in /etc/ansible/ansible.cfg as you prefer
