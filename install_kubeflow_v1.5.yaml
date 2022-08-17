@@ -37,7 +37,7 @@
         path: $HOME/kubeflow_ubuntu_ansible/files/certificate.yaml
       register: output
 
-    - name: insert
+    - name: insert https redirection code in kf-istio-resources.yaml
       become_user: "{{ admin }}"
       shell: |
         cat << EOF >> $HOME/manifests/common/istio-1-11/kubeflow-istio-resources/base/kf-istio-resources.yaml
