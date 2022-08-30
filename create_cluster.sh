@@ -1,7 +1,7 @@
 #!/bin/bash
 
-admin=gpuadmin
-master_ip=192.168.1.47
+admin=
+master_ip=
 
 echo -e "                              *************************************************                              "
 echo -e "                              *                                               *                              "
