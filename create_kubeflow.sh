@@ -1,9 +1,9 @@
 #!/bin/bash
 
-admin=gpuadmin
-master_ip=192.168.1.47
-nfs_ip=192.168.1.123
-nfs_path=/rancher
+admin=
+master_ip=
+nfs_ip=
+nfs_path=
 
 echo -e "                              *************************************************                              "
 echo -e "                              *                                               *                              "
