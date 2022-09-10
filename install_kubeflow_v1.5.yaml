@@ -78,3 +78,8 @@
         dest: /usr/bin/kustomize
         mode:  0777
       register: output
+
+# how to delete kubeflow
+# 1. kubectl delete profile --all
+# 2. change directory to manifests
+# 3. kustomize build example | kubectl delete -f -
