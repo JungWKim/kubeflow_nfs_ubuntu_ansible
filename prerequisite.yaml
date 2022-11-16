@@ -51,7 +51,6 @@
         pkg:
           - net-tools
           - nfs-common
-          - tmux
         state: present
       register: output
 

@@ -9,8 +9,3 @@ echo \
 $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 apt update
 apt install -y docker-ce=5:19.03.15~3-0~ubuntu-focal docker-ce-cli=5:19.03.15~3-0~ubuntu-focal containerd.io docker-compose-plugin
-
-echo -e "\n\n\n------------------------------------------ docker images -----------------------------------------------"
-docker images
-echo -e "\n\n\n----------------------------------------- docker --version ---------------------------------------------"
-docker --version
