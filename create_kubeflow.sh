@@ -54,11 +54,15 @@ func_check_prerequisite () {
 		logger -s "[Error] master node is unreachable."
 		exit 1 ; fi
 
+	logger -s "[INFO] master node is reachable."
+
 	# nfs server connection check
 	ping -c 5 ${NFS_IP} &> /dev/null
 	if [ $? -ne 0 ] ; then
 		logger -s "[Error] nfs server is unreachable."
 		exit 1 ; fi
+
+	logger -s "[INFO] nfs server is reachable."
 }
 
 #----------- call checking functions

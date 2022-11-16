@@ -55,6 +55,8 @@ func_check_prerequisite () {
 	if [ $? -ne 0 ] ; then
 		logger -s "[Error] master node is unreachable."
 		exit 1 ; fi
+
+	logger -s "[INFO] master node is reachable."
 }
 
 #----------- call checking functions
