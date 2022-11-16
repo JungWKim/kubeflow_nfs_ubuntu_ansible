@@ -74,9 +74,51 @@
         mode: 0777
       register: output
 
-    - name: execute docker installation script
-      command: "/home/{{ admin }}/install_docker_ubuntu.sh"
+    - name: download packages for docker installation
+      apt:
+        pkg:
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
       register: output
+
+    - name: check if /etc/apt/keyrings exists
+      stat:
+        path: /etc/apt/keyrings
+      register: stat_result
+
+    - name: create /etc/apt/keyrings
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+      when: not stat_result.stat.exists
+      register: output
+
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable
+        state: present
+
+    - name: download packages for docker installation
+      apt:
+        pkg:
+          - docker-ce=5:19.03.15~3-0~ubuntu-focal
+          - docker-ce-cli=5:19.03.15~3-0~ubuntu-focal
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+        update_cache: true
+
+#    - name: execute docker installation script
+#      command: "/home/{{ admin }}/install_docker_ubuntu.sh"
+#      register: output
 
     - name: copy daemon.json to master
       copy:
