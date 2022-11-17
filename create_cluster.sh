@@ -76,7 +76,7 @@ echo -e "                              *                                        
 echo -e "                              *           execute setup_master.yaml           *                              "
 echo -e "                              *                                               *                              "
 echo -e "                              *************************************************                              \n\n"
-ansible-playbook setup_master.yaml -kK -e "admin=${ADMIN} MASTER_IP=${MASTER_IP}"
+ansible-playbook setup_master.yaml -kK -e "admin=${ADMIN} master_ip=${MASTER_IP}"
 
 echo -e "                              *************************************************                              "
 echo -e "                              *                                               *                              "

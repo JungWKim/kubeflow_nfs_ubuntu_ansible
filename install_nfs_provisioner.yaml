@@ -31,7 +31,7 @@
       shell: helm repo update
       register: output
 
-    - name: install gpu operator
+    - name: make nfs storageclass
       shell: |
         helm install nfs-subdir-external-provisioner nfs-subdir-external-provisioner/nfs-subdir-external-provisioner \
         --set nfs.server={{ nfs_ip }} \
