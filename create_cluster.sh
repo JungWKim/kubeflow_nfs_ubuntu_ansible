@@ -87,6 +87,13 @@ ansible-playbook setup_worker.yaml -kK -e "admin=${ADMIN}"
 
 echo -e "                              *************************************************                              "
 echo -e "                              *                                               *                              "
+echo -e "                              *         execute install_dashboard.yaml        *                              "
+echo -e "                              *                                               *                              "
+echo -e "                              *************************************************                              \n\n"
+ansible-playbook install_dashboard.yaml -kK -e "admin=${ADMIN}"
+
+echo -e "                              *************************************************                              "
+echo -e "                              *                                               *                              "
 echo -e "                              *       install k8s.core ansible-galaxy         *                              "
 echo -e "                              *                                               *                              "
 echo -e "                              *************************************************                              \n\n"
