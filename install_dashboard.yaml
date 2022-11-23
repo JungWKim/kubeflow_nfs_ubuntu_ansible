@@ -19,15 +19,15 @@
 
     - name: deploy k8s dashboard pod
       become_user: "{{ admin }}"
-      shell: kubectl apply -f $HOME/kubeflow_ubuntu_ansible/files/kubernetes-dashboard.yaml
+      shell: kubectl apply -f $HOME/kubeflow_nfs_ubuntu_ansible/files/kubernetes-dashboard.yaml
       register: output
 
     - name: deploy service account for dashboard
       become_user: "{{ admin }}"
-      shell: kubectl apply -f $HOME/kubeflow_ubuntu_ansible/files/sa.yaml
+      shell: kubectl apply -f $HOME/kubeflow_nfs_ubuntu_ansible/files/sa.yaml
       register: output
 
     - name: deploy cluster rolebinding for dashboard
       become_user: "{{ admin }}"
-      shell: kubectl apply -f $HOME/kubeflow_ubuntu_ansible/files/clusterrolebinding.yaml
+      shell: kubectl apply -f $HOME/kubeflow_nfs_ubuntu_ansible/files/clusterrolebinding.yaml
       register: output

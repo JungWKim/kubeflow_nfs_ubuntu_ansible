@@ -34,7 +34,7 @@
       replace:
         regexp: 'MASTER_IP'
         replace: "{{ master_ip }}"
-        path: $HOME/kubeflow_ubuntu_ansible/files/certificate.yaml
+        path: $HOME/kubeflow_nfs_ubuntu_ansible/files/certificate.yaml
       register: output
 
     - name: insert https redirection code in kf-istio-resources.yaml
